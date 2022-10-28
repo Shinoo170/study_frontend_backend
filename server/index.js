@@ -1,48 +1,118 @@
-const express = require("express");
+const express = require('express')
 const app = express()
+const Product = require('./model')
 const port = 8000
 
 app.use(express.urlencoded({extended: true}))
 app.use(express.json())
-app.use(express.static('public'))
 
-app.get('/api/server-time', (req, res) => {
-    let now = new Date()
-    let time = {
-        hour: now.getHours(),
-        minute: now.getMinutes(),
-        second: now.getSeconds()
+app.post('/api/db/create', (request, response) => {
+    let form = request.body
+    let data = {
+        name: form.name || '', 
+        price: form.price || 0, 
+        detail: form.detail || '',
+        date_added: new Date(Date.parse(form.date_added)) || new Date()
     }
-    res.json(time)
+
+    Product.create(data, err => {
+        if (!err) { 
+            console.log('document saved')
+            response.send(true) 
+        } else {
+            console.log(err)
+            response.send(false) 
+        }  
+    })
 })
 
-function rd(min, max){
-    let x = (max - min) + 1
-    return min + Math.floor(Math.random() * x )
-}
-
-app.get('/api/football-result', (req, res) => {
-    let table = `
-        <table border="1" style="margin: 7px auto">
-        <tr><td>ManU</td><td>${rd(0,5)}-${rd(0,5)}</td><td>Liverpool</td></tr>
-        <tr><td>Chelsea</td><td>${rd(0,5)}-${rd(0,5)}</td><td>ManCity</td></tr>
-        <tr><td>Arsenal</td><td>${rd(0,5)}-${rd(0,5)}</td><td>Spur</td></tr>
-    `
-    res.send(table)
+app.get('/api/db/read', (request, response) => {
+    Product
+    .find()     
+    .exec((err, docs) => {
+        response.json(docs)
+    })
 })
 
-app.get('/api/form-get', (req, res) => {
-    let t = req.query.target || ''
-    let k = req.query.kw || ''
-    let n = parseInt((Math.random()* 1000))
-    let r = {
-        target: t,
-        kw: k,
-        results: n
+app.post('/api/db/update', (request, response) => {
+    let form = request.body
+    let data = {
+        name: form.name || '', 
+        price: form.price || 0, 
+        detail: form.detail || '',
+        date_added: new Date(Date.parse(form.date_added)) || new Date()
     }
-    res.json(r)
+
+	Product
+	.findByIdAndUpdate(form._id, data, { useFindAndModify: false })
+	.exec(err => {
+        if (err) {
+            response.json({error: err})
+            return
+        }
+    })	
+    	
+    //หลังการอัปเดต ก็อ่านข้อมูลอีกครั้ง แล้วส่งไปแสดงผลที่ฝั่งโลคอลแทนข้อมูลเดิม
+    Product
+    .find()     
+    .exec((err, docs) => {
+        response.json(docs)
+    })
+})
+
+app.post('/api/db/delete', (request, response) => {
+    let _id = request.body._id
+
+	Product
+	.findByIdAndDelete(_id, { useFindAndModify: false })
+	.exec(err => {
+        if (err) {
+            response.json({error: err})
+            return
+        }
+    })		
+
+    Product
+    .find()     
+    .exec((err, docs) => {
+        response.json(docs)
+    })
+})
+
+app.get('/api/db/paginate', (request, response) => {
+	let options = {
+		page: request.query.page || 1,     //เพจปัจจุบัน
+		limit: 2     //แสดงผลหน้าละ 2 รายการ (ข้อมูลมีน้อย)            
+	}
+
+	Product.paginate({}, options, (err, result) => {
+        response.json(result)
+    })
+})
+
+app.get('/api/db/search', (request, response) => {
+    let q = request.query.q || ''
+
+    //กรณีนี้ให้กำหนด pattern ด้วย RegExp แทนการใช้ / /
+    let pattern = new RegExp(q, 'ig')   
+
+    //จะค้นหาจากฟิลด์ name และ detail
+    let conditions = {$or: [        
+                        {name: {$regex: pattern}}, 
+                        {detail: {$regex: pattern}}
+                     ]}	
+
+    let options = {
+		page: request.query.page || 1,     //เพจปัจจุบัน
+		limit: 2     //แสดงผลหน้าละ 2 รายการ (ข้อมูลมีน้อย)               
+	}
+
+	Product
+	.paginate(conditions, options, (err, result) => {
+        response.json(result)
+    })
 })
 
 app.listen(port, () => {
-    console.log(`Server listening on port ${port}!`)
+	console.log('Server listening on port ' + port)
 })

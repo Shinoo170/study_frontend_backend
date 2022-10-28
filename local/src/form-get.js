@@ -1,18 +1,18 @@
-import React from "react"
+import React from 'react'
 
 export default function FormGet() {
-    let [ searchResult, setSearchResult ] = React.useState('')
+    let [searchResult, setSearchResult] = React.useState('')
     const form = React.useRef()
 
     const onSubmitForm = (event) => {
         event.preventDefault()
 
         const formData = new FormData(form.current)
-        let params = new URLSearchParams(formData)
+        let params = new URLSearchParams(formData) //.toString()
         let URL = '/api/form-get?' + params
 
         fetch(URL)
-        .then( response => response.json())
+        .then(response => response.json())
         .then(result => {
             let r = (
                 <>
@@ -26,19 +26,19 @@ export default function FormGet() {
     }
 
     return (
-        <div style={{textAlign:'center', marginTop:'20px'}}>
-            <form ref={form} onSubmit={onSubmitForm}>
-                <label>ค้นหา:</label>&nbsp;
-                <select id='target' name='target'>
-                    <option value='เว็บ'>เว็บ</option>
-                    <option value='รูปภาพ'>รูปภาพ</option>
-                    <option value='วีดีโอ'>วีดีโอ</option>
-                </select>&nbsp;
-                <input type='text' id='kw' name='kw'/>&nbsp;
-                <button>ตกลง</button>
-            </form>
-            <br/>
-            <div>{searchResult}</div>
-        </div>
+    <div style={{textAlign:'center', marginTop:'20px'}}>
+        <form ref={form} onSubmit={onSubmitForm}>
+            <label>ค้นหา:</label>&nbsp;
+            <select id="target" name="target">
+                <option value="เว็บ">เว็บ</option>
+                <option value="รูปภาพ">รูปภาพ</option>
+                <option value="วิดีโอ">วิดีโอ</option>
+            </select>&nbsp;
+            <input type="text" id="kw" name="kw"/>&nbsp;
+            <button>ตกลง</button>
+        </form>
+        <br/>
+        <div>{searchResult}</div>
+    </div>
     )
 }
